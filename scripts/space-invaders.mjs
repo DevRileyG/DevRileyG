@@ -569,7 +569,6 @@ function render({ login, bio, weeks, languages }) {
 .tw{animation:tw 3s ease-in-out infinite}@keyframes tw{0%,100%{opacity:1}50%{opacity:.15}}
 .bl{animation:bl 1s step-end infinite}@keyframes bl{0%{opacity:1}50%{opacity:0}100%{opacity:1}}
 ${css.join('\n')}
-@media (prefers-reduced-motion:reduce){*{animation:none!important}}
 </style>
 <defs>
 ${defs.join('\n')}
