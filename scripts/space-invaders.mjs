@@ -275,10 +275,12 @@ const GREEN = '#39ff6a';
 const WHITE = '#eef1f8';
 const GREY = '#8b93ad';
 
-const START = 2.5;
-const LIFT = 0.45;
-const BULLET_SPEED = 520;
-const SHIP_SPEED = 420;
+const START = 3.5;
+const BATTLE = 20; // seconds of shooting to spread the shots across
+const LIFT = 0.7;
+const BULLET_SPEED = 360;
+const SHIP_SPEED = 300;
+const BOOM = 0.45;
 const EPS = 0.004;
 
 const ALIASES = { 'Jupyter Notebook': 'Jupyter', 'Visual Basic .NET': 'VB.NET', 'Vim Script': 'Vim' };
@@ -316,8 +318,9 @@ function render({ login, bio, weeks, languages }) {
     [order[i], order[j]] = [order[j], order[i]];
   }
 
-  const gap = clamp(12 / n, 0.16, 0.45);
-  const maxStep = Math.min(140, SHIP_SPEED * gap * 0.85);
+  // Between shots the ship holds still, glides to the next target, then settles before firing.
+  const gap = clamp(BATTLE / n, 0.25, 0.8);
+  const maxStep = Math.min(140, SHIP_SPEED * gap * 0.55);
   const yAt = (e, t) => SPAWN_Y + e.speed * (t - e.spawn);
   const shotY = (e, t) => NOSE_Y - BULLET_SPEED * (t - e.fire);
   const crosses = (from, to, gapY, dy) => {
@@ -329,7 +332,7 @@ function render({ login, bio, weeks, languages }) {
     const dx = Math.abs(c.x - o.x);
     return (
       (dx < (c.w + o.w) / 2 + 4 && crosses(Math.max(c.spawn, o.spawn), Math.min(c.hit, o.hit), 22, t => yAt(c, t) - yAt(o, t))) ||
-      (dx < (c.w + 26) / 2 && crosses(Math.max(c.spawn, o.hit), Math.min(c.hit, o.hit + 0.3), 18, t => yAt(c, t) - o.yHit)) ||
+      (dx < (c.w + 26) / 2 && crosses(Math.max(c.spawn, o.hit), Math.min(c.hit, o.hit + BOOM), 18, t => yAt(c, t) - o.yHit)) ||
       (dx < o.w / 2 + 6 && crosses(Math.max(c.fire, o.spawn), Math.min(c.hit, o.hit), 14, t => shotY(c, t) - yAt(o, t))) ||
       (dx < c.w / 2 + 6 && crosses(Math.max(o.fire, c.spawn), Math.min(o.hit, c.hit), 14, t => shotY(o, t) - yAt(c, t)))
     );
@@ -346,7 +349,7 @@ function render({ login, bio, weeks, languages }) {
       const step = (20 + rng() * (maxStep - 20)) * (rng() < 0.8 ? dir : -dir);
       const yHit = HIT_MIN + rng() * (HIT_MAX - HIT_MIN);
       const hit = fire + (NOSE_Y - (yHit + 11)) / BULLET_SPEED;
-      let speed = 24 + rng() * 22;
+      let speed = 16 + rng() * 14;
       let spawn = hit - (yHit - SPAWN_Y) / speed;
       if (spawn < 0.3) {
         spawn = 0.3;
@@ -364,9 +367,15 @@ function render({ login, bio, weeks, languages }) {
 
   const cleared = Math.max(...enemies.map(e => e.hit));
   const hide = cleared + 0.8;
-  const T = Math.ceil(hide + 4.5); // whole seconds keeps the 1s sprite flip in sync across loops
-  const refill = k => hide + 0.9 + (k * 2.2) / n;
-  const shipKeys = [[0, FIELD_MID], [START - 0.6, FIELD_MID], ...enemies.map(e => [e.fire, e.x]), [cleared + 1.2, FIELD_MID], [T, FIELD_MID]];
+  const T = Math.ceil(hide + 5.5); // whole seconds keeps the 1s sprite flip in sync across loops
+  const refill = k => hide + 1.2 + (k * 3) / n;
+  const shipKeys = [
+    [0, FIELD_MID],
+    [START - 1, FIELD_MID],
+    ...enemies.flatMap(e => [[e.fire - gap * 0.2, e.x], [e.fire + gap * 0.25, e.x]]),
+    [cleared + 1.5, FIELD_MID],
+    [T, FIELD_MID],
+  ];
 
   // Score climbs by each fired day's contribution count.
   const scores = [[0, 0]];
@@ -421,8 +430,8 @@ function render({ login, bio, weeks, languages }) {
   field.push(
     `<g transform="translate(-40,0)" style="${keyframes([
       [0, 'transform:translate(-40px,0px)'],
-      [3.2, 'transform:translate(-40px,0px)'],
-      [8.2, `transform:translate(${FIELD.right + 40}px,0px)`],
+      [4, 'transform:translate(-40px,0px)'],
+      [12, `transform:translate(${FIELD.right + 40}px,0px)`],
       [T, `transform:translate(${FIELD.right + 40}px,0px)`],
     ], 'linear')}"><path d="${bitmap(UFO, 0, FIELD.top + 4, 2)}" fill="#ff4b5c"/></g>`,
   );
@@ -442,7 +451,7 @@ function render({ login, bio, weeks, languages }) {
         [e.hit + EPS, `opacity:0;${low}`],
         [T, `opacity:0;${low}`],
       ], 'linear')}"/>`,
-      `<use href="#boom" fill="${e.lang.color}" x="${e.x}" y="${num(e.yHit)}" opacity="0" style="${during(e.hit, e.hit + 0.3)}"/>`,
+      `<use href="#boom" fill="${e.lang.color}" x="${e.x}" y="${num(e.yHit)}" opacity="0" style="${during(e.hit, e.hit + BOOM)}"/>`,
     );
   }
 
