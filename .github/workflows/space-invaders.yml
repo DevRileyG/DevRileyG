@@ -1,4 +1,4 @@
-# Regenerates space-invaders.svg every day from your latest commits and languages.
+# Regenerates space-invaders.svg every day from your contribution graph and languages.
 #
 # Needs a repo secret named INVADERS_TOKEN: a fine-grained personal access token with
 # "All repositories" access and read-only Contents + Metadata permissions, so private
