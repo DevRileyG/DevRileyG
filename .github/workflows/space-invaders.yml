@@ -1,0 +1,39 @@
+# Regenerates space-invaders.svg every day from your latest commits and languages.
+#
+# Needs a repo secret named INVADERS_TOKEN: a fine-grained personal access token with
+# "All repositories" access and read-only Contents + Metadata permissions, so private
+# repos are counted too. (The built-in GITHUB_TOKEN can only see this one repo.)
+name: Space Invaders
+
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Generate banner
+        env:
+          GH_TOKEN: ${{ secrets.INVADERS_TOKEN }}
+        run: node scripts/space-invaders.mjs --out space-invaders.svg
+
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add space-invaders.svg
+          if ! git diff --cached --quiet; then
+            git commit -m "Update Space Invaders banner"
+            git push
+          fi
